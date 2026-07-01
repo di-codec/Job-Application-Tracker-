@@ -1,0 +1,371 @@
+/* Mobile-first responsive enhancements (breakpoints: 480 / 768 / 1024 / 1280 / 1920) */
+
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--nav-hover-bg);
+  color: var(--header-text);
+  cursor: pointer;
+}
+
+.nav-toggle__icon {
+  position: relative;
+  display: block;
+  width: 1.15rem;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: background 0.2s ease;
+}
+
+.nav-toggle__icon::before,
+.nav-toggle__icon::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 1.15rem;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 0.2s ease, top 0.2s ease;
+}
+
+.nav-toggle__icon::before {
+  top: -0.38rem;
+}
+
+.nav-toggle__icon::after {
+  top: 0.38rem;
+}
+
+.nav-toggle__icon--open {
+  background: transparent;
+}
+
+.nav-toggle__icon--open::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.nav-toggle__icon--open::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+.timeline__row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.timeline__company {
+  min-width: 0;
+}
+
+.interview-notes__sidebar {
+  max-height: 16rem;
+}
+
+.search-panel__header {
+  padding: 1rem;
+}
+
+.search-panel__section-header {
+  flex-wrap: wrap;
+}
+
+.table-insert__custom {
+  grid-template-columns: 1fr;
+}
+
+.table-insert__custom-submit {
+  width: 100%;
+}
+
+@media (min-width: 30rem) {
+  .form__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .form__button {
+    width: auto;
+    min-width: 0;
+  }
+
+  .search__item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .work-mode-hybrid__input {
+    max-width: 7.5rem;
+    width: auto;
+  }
+
+  .table-insert__custom {
+    grid-template-columns: 1fr 1fr auto;
+  }
+
+  .table-insert__custom-submit {
+    width: auto;
+  }
+}
+
+@media (min-width: 48rem) {
+  .header {
+    padding: 0.85rem 1.25rem;
+  }
+
+  .main {
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+  }
+
+  .form {
+    max-width: 40rem;
+  }
+
+  .search-panel {
+    padding: 1rem;
+    align-items: center;
+  }
+
+  .search-panel__dialog {
+    width: min(75rem, 100%);
+    height: calc(100dvh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px var(--shadow);
+  }
+
+  .search-panel__header,
+  .search-panel__job,
+  .search-panel__resume {
+    padding: 1.15rem 1.35rem;
+  }
+
+  .search-panel__detail {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .resume-preview__pdf {
+    min-height: 20rem;
+    height: calc(100dvh - 22rem);
+  }
+
+  .resume-preview__docx {
+    min-height: 20rem;
+    max-height: calc(100dvh - 22rem);
+  }
+
+  .interview-notes__sidebar {
+    max-height: 20rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.7rem 0.9rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .nav-toggle {
+    display: none;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+  }
+
+  .nav__link {
+    display: inline-block;
+    padding: 0.4rem 0.85rem;
+    width: auto;
+  }
+
+  .timeline__row {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .timeline__company {
+    flex-shrink: 0;
+    min-width: 7.5rem;
+  }
+
+  .search-panel__body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .search-panel__job {
+    border-right: 1px solid var(--border-light);
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .search-panel__resume {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .search-panel__header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .interview-notes {
+    grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+    gap: 1.25rem;
+    min-height: 35rem;
+    height: calc(100dvh - 13rem);
+    align-items: stretch;
+  }
+
+  .page--interview-notes {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .page--interview-notes .interview-notes {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .interview-notes__sidebar {
+    max-height: none;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .interview-notes__list {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .interview-notes__editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .interview-notes__form {
+    flex: 1;
+    min-height: 0;
+    gap: 0.45rem;
+    overflow: hidden;
+  }
+
+  .interview-notes__editor-header {
+    flex-shrink: 0;
+  }
+
+  .interview-notes__field--plan {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .interview-notes__field--plan .markdown-field__surface {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .interview-notes__field--plan .markdown-field__surface > div {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .interview-notes__field--plan .ProseMirror {
+    flex: 1;
+    min-height: 6rem;
+    overflow-y: auto;
+  }
+
+  .interview-notes__editor-surface--plan,
+  .interview-notes__field--plan .markdown-field__surface {
+    min-height: 0;
+  }
+
+  .interview-notes__field--live {
+    flex: 0 0 auto;
+    margin-top: 0;
+  }
+
+  .interview-notes__editor-surface--live,
+  .interview-notes__field--live .markdown-field__surface {
+    min-height: 8.75rem;
+    max-height: 10rem;
+  }
+
+  .resume-preview__pdf {
+    min-height: 24rem;
+    height: calc(100dvh - 21rem);
+  }
+
+  .resume-preview__docx {
+    min-height: 24rem;
+    max-height: calc(100dvh - 21rem);
+  }
+}
+
+@media (min-width: 80rem) {
+  .main {
+    max-width: 87.5rem;
+    padding: 2rem;
+  }
+
+  .header {
+    padding: 1rem 2rem;
+  }
+
+  .search {
+    max-width: 56.25rem;
+  }
+
+  .search--table {
+    max-width: 26.25rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (min-width: 120rem) {
+  .main {
+    max-width: 100rem;
+  }
+}

@@ -1,0 +1,23 @@
+import { useTheme } from '../context/ThemeContext.jsx';
+
+export default function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
+
+  return (
+    <button
+      type="button"
+      className="theme-toggle"
+      onClick={toggleTheme}
+      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={isDark ? 'Light mode' : 'Dark mode'}
+    >
+      <span className="theme-toggle__track" aria-hidden="true">
+        <span className={`theme-toggle__thumb${isDark ? ' theme-toggle__thumb--dark' : ''}`} />
+      </span>
+      <span className="theme-toggle__icon" aria-hidden="true">
+        {isDark ? '☀' : '☾'}
+      </span>
+    </button>
+  );
+}
