@@ -1,9 +1,11 @@
+import { apiUrl } from './client.js';
+
 async function parseJsonResponse(response) {
   return response.json().catch(() => ({}));
 }
 
 export async function getInterviewNotesList() {
-  const response = await fetch('/api/applications/interview-notes');
+  const response = await fetch(apiUrl('/api/applications/interview-notes'));
   const data = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -14,7 +16,7 @@ export async function getInterviewNotesList() {
 }
 
 export async function getInterviewNotes(applicationId) {
-  const response = await fetch(`/api/applications/${applicationId}/interview-notes`);
+  const response = await fetch(apiUrl(`/api/applications/${applicationId}/interview-notes`));
   const data = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -25,7 +27,7 @@ export async function getInterviewNotes(applicationId) {
 }
 
 export async function saveInterviewNotes(applicationId, { preparationPlan, liveNotes }) {
-  const response = await fetch(`/api/applications/${applicationId}/interview-notes`, {
+  const response = await fetch(apiUrl(`/api/applications/${applicationId}/interview-notes`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

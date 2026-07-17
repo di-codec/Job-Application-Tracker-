@@ -1,18 +1,15 @@
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
-import { fileURLToPath } from 'url';
 import {
   ALLOWED_RESUME_EXTENSIONS,
   ALLOWED_RESUME_MIME_TYPES,
 } from '../constants.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, '..', 'uploads');
+import { getUploadsDir } from '../paths.js';
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, getUploadsDir());
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();

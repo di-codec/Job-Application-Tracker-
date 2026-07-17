@@ -1,9 +1,11 @@
+import { apiUrl } from './client.js';
+
 async function parseJsonResponse(response) {
   return response.json().catch(() => ({}));
 }
 
 export async function getApplications() {
-  const response = await fetch('/api/applications');
+  const response = await fetch(apiUrl('/api/applications'));
   const data = await parseJsonResponse(response);
 
   if (!response.ok) {
@@ -14,7 +16,7 @@ export async function getApplications() {
 }
 
 export async function createApplication(formData) {
-  const response = await fetch('/api/applications', {
+  const response = await fetch(apiUrl('/api/applications'), {
     method: 'POST',
     body: formData,
   });
@@ -29,7 +31,7 @@ export async function createApplication(formData) {
 }
 
 export async function updateApplicationStatus(id, status) {
-  const response = await fetch(`/api/applications/${id}/status`, {
+  const response = await fetch(apiUrl(`/api/applications/${id}/status`), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
@@ -45,7 +47,7 @@ export async function updateApplicationStatus(id, status) {
 }
 
 export async function updateApplication(id, formData) {
-  const response = await fetch(`/api/applications/${id}`, {
+  const response = await fetch(apiUrl(`/api/applications/${id}`), {
     method: 'PUT',
     body: formData,
   });
@@ -60,7 +62,7 @@ export async function updateApplication(id, formData) {
 }
 
 export async function deleteApplication(id) {
-  const response = await fetch(`/api/applications/${id}`, {
+  const response = await fetch(apiUrl(`/api/applications/${id}`), {
     method: 'DELETE',
   });
 
@@ -71,6 +73,6 @@ export async function deleteApplication(id) {
 }
 
 export function getResumeUrl(id, inline = false) {
-  const url = `/api/applications/${id}/resume`;
+  const url = apiUrl(`/api/applications/${id}/resume`);
   return inline ? `${url}?inline=1` : url;
 }

@@ -24,3 +24,14 @@ export function getTimelineStages(status) {
   const nodes = STATUS_NODE_PATHS[status] ?? [];
   return nodes.map((node) => CHIP_BY_NODE[node]).filter(Boolean);
 }
+
+export function shouldShowInTimeline(status) {
+  if (status === 'no_offer') return false;
+  const nodes = STATUS_NODE_PATHS[status] ?? [];
+  return nodes.includes(1);
+}
+
+export function hasReachedInterview(status) {
+  const nodes = STATUS_NODE_PATHS[status] ?? [];
+  return nodes.includes(1);
+}

@@ -1,11 +1,9 @@
 import Database from 'better-sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { ensureDataDirs, getDbPath } from './paths.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, 'data', 'applications.db');
+ensureDataDirs();
 
-const db = new Database(dbPath);
+const db = new Database(getDbPath());
 
 const createTableSql = `
   CREATE TABLE applications (

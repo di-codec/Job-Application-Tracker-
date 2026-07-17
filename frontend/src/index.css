@@ -563,7 +563,39 @@ body.nav-menu-open {
 }
 
 .home-funnel {
+  margin-top: 0.5rem;
+}
+
+.home-timeline {
   margin-top: 2rem;
+}
+
+.home-interview-stats {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.home-interview-stats__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.home-interview-stats__value {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--accent);
+}
+
+.home-interview-stats__detail {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 .home-funnel__intro {

@@ -1,14 +1,11 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import db from '../db.js';
 import { APPLICATION_STATUSES, WORK_MODES } from '../constants.js';
 import { uploadResume } from '../middleware/upload.js';
+import { getUploadsDir } from '../paths.js';
 import interviewNotesRouter from './interviewNotes.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, '..', 'uploads');
 
 const router = Router();
 
@@ -106,7 +103,7 @@ function formatApplication(row) {
 
 function removeUploadedFile(storedName) {
   if (!storedName) return;
-  const filePath = path.join(uploadsDir, storedName);
+  const filePath = path.join(getUploadsDir(), storedName);
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
   }
@@ -341,7 +338,7 @@ router.get('/:id/resume', (req, res) => {
     return res.status(404).json({ error: 'Resume not found for this application' });
   }
 
-  const filePath = path.join(uploadsDir, resume.storedName);
+  const filePath = path.join(getUploadsDir(), resume.storedName);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Resume file not found on disk' });
   }

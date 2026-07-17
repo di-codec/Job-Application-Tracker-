@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getApplications } from '../api/applications.js';
 import ApplicationTimeline from '../components/ApplicationTimeline.jsx';
 import FunnelSankey from '../components/FunnelSankey.jsx';
+import InterviewWeeklyStats from '../components/InterviewWeeklyStats.jsx';
+import { shouldShowInTimeline } from '../utils/timelineStages.js';
 
 export default function Home() {
   const location = useLocation();
@@ -38,6 +40,11 @@ export default function Home() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [location.pathname, loadApplications]);
 
+  const timelineApplications = useMemo(
+    () => applications.filter((app) => shouldShowInTimeline(app.status)),
+    [applications],
+  );
+
   return (
     <section className="page page--wide">
       <h2 className="page__title">Home</h2>
@@ -47,14 +54,19 @@ export default function Home() {
 
       {!loading && !error && (
         <>
-          <ApplicationTimeline applications={applications} />
-
           <div className="home-funnel">
             <p className="page__text page__text--muted home-funnel__intro">
               Application funnel: from submission to final outcome.
             </p>
             <FunnelSankey applications={applications} />
           </div>
+
+          <ApplicationTimeline
+            applications={timelineApplications}
+            hasApplications={applications.length > 0}
+          />
+
+          <InterviewWeeklyStats applications={applications} />
         </>
       )}
     </section>

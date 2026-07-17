@@ -1,9 +1,9 @@
 import { getTimelineStages } from '../utils/timelineStages.js';
 
-export default function ApplicationTimeline({ applications }) {
+export default function ApplicationTimeline({ applications, hasApplications = false }) {
   if (applications.length === 0) {
     return (
-      <div className="timeline timeline--empty">
+      <div className="timeline timeline--empty home-timeline">
         <div className="timeline__header">
           <div className="timeline__title-row">
             <h3 className="timeline__title">Timeline for each application</h3>
@@ -15,14 +15,16 @@ export default function ApplicationTimeline({ applications }) {
           </p>
         </div>
         <p className="page__text page__text--muted timeline__empty-text">
-          No applications yet.
+          {hasApplications
+            ? 'No applications at the interview stage (excluding no offer outcomes).'
+            : 'No applications yet.'}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="timeline">
+    <div className="timeline home-timeline">
       <div className="timeline__header">
         <div className="timeline__title-row">
           <h3 className="timeline__title">Timeline for each application</h3>
