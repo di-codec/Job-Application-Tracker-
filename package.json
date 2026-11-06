@@ -1,0 +1,28 @@
+{
+    "name": "job-tracker-mcp",
+    "version": "1.0.0",
+    "description": "Local MCP server bridging Claude Desktop to the Job Application Tracker API",
+    "type": "module",
+    "main": "server.js",
+    "bin": {
+        "job-tracker-mcp": "server.js"
+    },
+    "scripts": {
+        "start": "node server.js"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.29.0",
+        "docx": "^9.7.1",
+        "zod": "^3.25.76"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^26.1.1",
+        "typescript": "^7.0.2"
+    }
+}
