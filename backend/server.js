@@ -5,6 +5,7 @@ import { createRequire } from 'module';
 import './db.js';
 import { ensureDataDirs } from './paths.js';
 import applicationsRouter from './routes/applications.js';
+import skillsRouter from './routes/skills.js';
 
 // caxa bundles can break iconv-lite's lazy require("../encodings").
 // Preload it so packaged Express JSON parsing still works when needed.
@@ -45,6 +46,7 @@ app.use(cors());
 // Avoid body-parser/iconv-lite in the packaged sidecar (breaks status updates).
 app.use(parseJsonBody);
 app.use('/api/applications', applicationsRouter);
+app.use('/api/skills', skillsRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', message: 'Job Application Tracker API' });

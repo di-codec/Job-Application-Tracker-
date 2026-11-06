@@ -5,6 +5,7 @@ import AddApplication from './pages/AddApplication.jsx';
 import AllApplications from './pages/AllApplications.jsx';
 import Search from './pages/Search.jsx';
 import InterviewNotes from './pages/InterviewNotes.jsx';
+import SkillGap from './pages/SkillGap.jsx';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="applications" element={<AllApplications />} />
         <Route path="search" element={<Search />} />
         <Route path="interview-notes" element={<InterviewNotes />} />
+        <Route path="skill-gap" element={<SkillGap />} />
       </Route>
     </Routes>
   );

@@ -6,6 +6,12 @@ import { APPLICATION_STATUSES, WORK_MODES } from '../constants.js';
 import { uploadResume } from '../middleware/upload.js';
 import { getUploadsDir } from '../paths.js';
 import interviewNotesRouter from './interviewNotes.js';
+import missingSkillsRouter from './missingSkills.js';
+import {
+  getMissingSkills,
+  getMissingSkillsByApplication,
+  pruneUnusedSkills,
+} from '../skills.js';
 
 const router = Router();
 
@@ -21,6 +27,7 @@ const selectAll = db.prepare(`
     office_days_per_week,
     applied_date,
     resume_file,
+    include_in_gap_stats,
     status
   FROM applications
   ORDER BY applied_date DESC, id DESC
@@ -38,6 +45,7 @@ const selectById = db.prepare(`
     office_days_per_week,
     applied_date,
     resume_file,
+    include_in_gap_stats,
     status
   FROM applications
   WHERE id = ?
@@ -75,6 +83,7 @@ const updateApplication = db.prepare(`
     work_mode = ?,
     office_days_per_week = ?,
     resume_file = ?,
+    include_in_gap_stats = COALESCE(?, include_in_gap_stats),
     status = ?
   WHERE id = ?
 `);
@@ -93,12 +102,28 @@ function parseResumeFile(value) {
   }
 }
 
-function formatApplication(row) {
+function formatApplication(row, missingSkills) {
   if (!row) return null;
   return {
     ...row,
     resume_file: parseResumeFile(row.resume_file),
+    include_in_gap_stats: row.include_in_gap_stats !== 0,
+    missing_skills: missingSkills ?? getMissingSkills(row.id),
   };
+}
+
+/** Accepts true/false/1/0 (multipart sends strings). undefined/'' → keep current. */
+function parseIncludeInGapStats(value) {
+  if (value === undefined || value === null || value === '') {
+    return { value: null };
+  }
+  if (value === true || value === 'true' || value === '1' || value === 1) {
+    return { value: 1 };
+  }
+  if (value === false || value === 'false' || value === '0' || value === 0) {
+    return { value: 0 };
+  }
+  return { error: 'include_in_gap_stats must be true or false' };
 }
 
 function removeUploadedFile(storedName) {
@@ -208,11 +233,15 @@ router.post('/', uploadResume.single('resume'), (req, res) => {
 });
 
 router.get('/', (_req, res) => {
-  const applications = selectAll.all().map(formatApplication);
+  const skillsByApplication = getMissingSkillsByApplication();
+  const applications = selectAll
+    .all()
+    .map((row) => formatApplication(row, skillsByApplication.get(row.id) ?? []));
   res.json(applications);
 });
 
 router.use(interviewNotesRouter);
+router.use(missingSkillsRouter);
 
 router.get('/:id', (req, res) => {
   const application = formatApplication(selectById.get(req.params.id));
@@ -250,6 +279,7 @@ router.put('/:id', uploadResume.single('resume'), (req, res) => {
     salary_gbp,
     work_mode,
     office_days_per_week,
+    include_in_gap_stats,
     status,
   } = req.body;
 
@@ -283,6 +313,12 @@ router.put('/:id', uploadResume.single('resume'), (req, res) => {
     return res.status(400).json({ error: parsedWorkMode.error });
   }
 
+  const parsedIncludeInGapStats = parseIncludeInGapStats(include_in_gap_stats);
+  if (parsedIncludeInGapStats.error) {
+    if (req.file) removeUploadedFile(req.file.filename);
+    return res.status(400).json({ error: parsedIncludeInGapStats.error });
+  }
+
   let resumeFile = existing.resume_file;
   if (req.file) {
     const previousResume = parseResumeFile(existing.resume_file);
@@ -304,6 +340,7 @@ router.put('/:id', uploadResume.single('resume'), (req, res) => {
     parsedWorkMode.workMode,
     parsedWorkMode.officeDaysPerWeek,
     resumeFile,
+    parsedIncludeInGapStats.value,
     status || existing.status,
     req.params.id,
   );
@@ -323,7 +360,8 @@ router.delete('/:id', (req, res) => {
     removeUploadedFile(resume.storedName);
   }
 
-  deleteApplication.run(req.params.id);
+  deleteApplication.run(req.params.id); // missing skills are removed via ON DELETE CASCADE
+  pruneUnusedSkills();
   res.status(204).send();
 });
 

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { updateApplication } from '../api/applications.js';
+import { updateMissingSkills } from '../api/skills.js';
+import MissingSkillsField from './MissingSkillsField.jsx';
 import {
   APPLICATION_STATUSES,
   STATUS_LABELS,
@@ -27,6 +29,12 @@ export default function EditApplicationModal({ application, onClose, onSaved }) 
     office_days_per_week: application.office_days_per_week ?? '',
     status: application.status,
   });
+  const [missingSkills, setMissingSkills] = useState(
+    () => application.missing_skills?.map((skill) => skill.name) ?? [],
+  );
+  const [includeInGapStats, setIncludeInGapStats] = useState(
+    application.include_in_gap_stats !== false,
+  );
   const [resume, setResume] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -103,6 +111,7 @@ export default function EditApplicationModal({ application, onClose, onSaved }) 
     formData.append('salary_gbp', form.salary_gbp === '' ? '' : form.salary_gbp);
     appendWorkModeToFormData(formData, form.work_mode, form.office_days_per_week);
     formData.append('status', form.status);
+    formData.append('include_in_gap_stats', includeInGapStats ? 'true' : 'false');
     if (resume) {
       formData.append('resume', resume);
     }
@@ -111,6 +120,8 @@ export default function EditApplicationModal({ application, onClose, onSaved }) 
     try {
       const updated = await updateApplication(application.id, formData);
       onSaved(updated);
+      const savedSkills = await updateMissingSkills(application.id, missingSkills);
+      onSaved({ ...updated, missing_skills: savedSkills });
       onClose();
     } catch (err) {
       setError(err.message);
@@ -234,6 +245,14 @@ export default function EditApplicationModal({ application, onClose, onSaved }) 
               rows={5}
             />
           </div>
+
+          <MissingSkillsField
+            idPrefix="edit_"
+            skills={missingSkills}
+            onSkillsChange={setMissingSkills}
+            includeInGapStats={includeInGapStats}
+            onIncludeInGapStatsChange={setIncludeInGapStats}
+          />
 
           <div className="form__field">
             <label className="form__label" htmlFor="edit_resume">

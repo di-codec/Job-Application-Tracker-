@@ -4,6 +4,8 @@ import { ensureDataDirs, getDbPath } from './paths.js';
 ensureDataDirs();
 
 const db = new Database(getDbPath());
+// Required for ON DELETE CASCADE to work (SQLite has it off by default).
+db.pragma('foreign_keys = ON');
 
 const createTableSql = `
   CREATE TABLE applications (
@@ -17,6 +19,7 @@ const createTableSql = `
     office_days_per_week INTEGER,
     applied_date TEXT NOT NULL DEFAULT (date('now')),
     resume_file TEXT,
+    include_in_gap_stats INTEGER NOT NULL DEFAULT 1 CHECK (include_in_gap_stats IN (0, 1)),
     status TEXT NOT NULL DEFAULT 'no_answer' CHECK (
       status IN (
         'no_answer',
@@ -52,6 +55,11 @@ if (!tableExists) {
     if (!columns.includes('office_days_per_week')) {
       db.exec('ALTER TABLE applications ADD COLUMN office_days_per_week INTEGER');
     }
+    if (!columns.includes('include_in_gap_stats')) {
+      db.exec(
+        'ALTER TABLE applications ADD COLUMN include_in_gap_stats INTEGER NOT NULL DEFAULT 1 CHECK (include_in_gap_stats IN (0, 1))',
+      );
+    }
   }
 }
 
@@ -69,5 +77,24 @@ if (!interviewNotesTableExists) {
     )
   `);
 }
+
+// Skill gap analysis: one row per (application, missing skill), so a skill
+// counts at most once per application.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS skills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    name_key TEXT NOT NULL UNIQUE
+  );
+
+  CREATE TABLE IF NOT EXISTS application_missing_skills (
+    application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    skill_id INTEGER NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+    PRIMARY KEY (application_id, skill_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_application_missing_skills_skill
+    ON application_missing_skills (skill_id);
+`);
 
 export default db;

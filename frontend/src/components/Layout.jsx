@@ -8,6 +8,7 @@ const navItems = [
   { to: '/applications', label: 'Application Manager', end: false },
   { to: '/search', label: 'JD Details', end: false },
   { to: '/interview-notes', label: 'Interview Notes', end: false },
+  { to: '/skill-gap', label: 'Skill Gap', end: false },
 ];
 
 export default function Layout() {

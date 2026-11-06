@@ -1606,3 +1606,110 @@ body.nav-menu-open {
   font-weight: 600;
   text-align: left;
 }
+
+/* Missing skills field (Edit application) */
+.skills-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skills-input__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skills-input__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.35rem 0.25rem 0.7rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.skills-input__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.skills-input__remove:hover {
+  background: var(--accent-soft-hover);
+}
+
+.skills-input__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.skills-input__toggle input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+
+/* Skill Gap page */
+.skill-gap__summary {
+  color: var(--text-secondary);
+}
+
+.skill-gap__table {
+  min-width: 28rem;
+}
+
+.skill-gap__rank {
+  width: 3rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.skill-gap__share {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 10rem;
+}
+
+.skill-gap__bar {
+  flex: 1;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--chip-neutral-bg);
+  overflow: hidden;
+}
+
+.skill-gap__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.skill-gap__percent {
+  min-width: 3.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
