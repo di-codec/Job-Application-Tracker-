@@ -1,52 +1,53 @@
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use std::thread;
+
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
 use tauri::Manager;
-use tauri_plugin_shell::process::CommandChild;
-use tauri_plugin_shell::ShellExt;
 
-enum BackendChild {
-    Shell(CommandChild),
-    Native(Child),
+struct BackendProcess {
+    child: Mutex<Option<Child>>,
+    shutting_down: AtomicBool,
 }
 
-impl BackendChild {
-    fn kill(self) {
-        match self {
-            BackendChild::Shell(child) => {
-                let _ = child.kill();
-            }
-            BackendChild::Native(mut child) => {
-                let _ = child.kill();
-            }
-        }
+const API_PORT: &str = "3001";
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+fn configure_hidden_command(command: &mut Command) {
+    command.stdout(Stdio::null()).stderr(Stdio::null());
+
+    #[cfg(windows)]
+    {
+        // Prevent the Node/caxa console window from flashing on Windows.
+        command.creation_flags(CREATE_NO_WINDOW);
     }
 }
 
-struct BackendProcess(Mutex<Option<BackendChild>>);
-
-const API_PORT: &str = "3001";
-const SIDECAR_NAME: &str = "binaries/job-tracker-api";
-
-fn project_root() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+fn project_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("project root")
         .to_path_buf()
 }
 
-fn wait_for_backend(port: &str) {
+fn wait_for_backend(port: &str, attempts: u32) -> bool {
     let address = format!("127.0.0.1:{port}");
-    for _ in 0..50 {
+    for _ in 0..attempts {
         if std::net::TcpStream::connect(&address).is_ok() {
-            return;
+            return true;
         }
-        std::thread::sleep(std::time::Duration::from_millis(200));
+        thread::sleep(std::time::Duration::from_millis(200));
     }
-    eprintln!("Backend did not become ready on {address}");
+    false
 }
 
-fn migrate_legacy_data(data_dir: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+fn migrate_legacy_data(data_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let db_path = data_dir.join("applications.db");
     if db_path.exists() {
         return Ok(());
@@ -70,7 +71,7 @@ fn migrate_legacy_data(data_dir: &std::path::Path) -> Result<(), Box<dyn std::er
             let entry = entry?;
             let target = uploads_dir.join(entry.file_name());
             if entry.file_type()?.is_file() && !target.exists() {
-                std::fs::copy(entry.path(), target)?;
+                let _ = std::fs::copy(entry.path(), target);
             }
         }
     }
@@ -79,42 +80,175 @@ fn migrate_legacy_data(data_dir: &std::path::Path) -> Result<(), Box<dyn std::er
     Ok(())
 }
 
-fn spawn_backend(app: &tauri::App) -> Result<BackendChild, Box<dyn std::error::Error>> {
-    let data_dir = app.path().app_data_dir()?;
-    std::fs::create_dir_all(&data_dir)?;
-    migrate_legacy_data(&data_dir)?;
+fn release_sidecar_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let exe_dir = std::env::current_exe()?
+        .parent()
+        .ok_or("missing exe directory")?
+        .to_path_buf();
 
+    let mut candidates = vec![
+        exe_dir.join("job-tracker-api.exe"),
+        exe_dir.join("binaries").join("job-tracker-api.exe"),
+    ];
+
+    if let Ok(entries) = std::fs::read_dir(&exe_dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if name.starts_with("job-tracker-api") && name.ends_with(".exe") {
+                candidates.push(entry.path());
+            }
+        }
+    }
+
+    let binaries_dir = exe_dir.join("binaries");
+    if let Ok(entries) = std::fs::read_dir(&binaries_dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if name.starts_with("job-tracker-api") && name.ends_with(".exe") {
+                candidates.push(entry.path());
+            }
+        }
+    }
+
+    for path in candidates {
+        if path.is_file() {
+            return Ok(path);
+        }
+    }
+
+    Err(format!(
+        "sidecar not found next to app.exe (looked in {})",
+        exe_dir.display()
+    )
+    .into())
+}
+
+fn spawn_backend_process(data_dir: &Path) -> Result<Child, Box<dyn std::error::Error>> {
     let data_dir_str = data_dir.to_string_lossy().to_string();
 
     let child = if cfg!(debug_assertions) {
         let backend_dir = project_root().join("backend");
         let server_js = backend_dir.join("server.js");
 
-        let native_child = Command::new("node")
+        let mut command = Command::new("node");
+        command
             .arg(server_js)
             .current_dir(&backend_dir)
             .env("JOB_TRACKER_DATA_DIR", &data_dir_str)
             .env("PORT", API_PORT)
-            .env("HOST", "127.0.0.1")
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
-            .spawn()?;
-
-        BackendChild::Native(native_child)
+            .env("HOST", "127.0.0.1");
+        configure_hidden_command(&mut command);
+        command.spawn()?
     } else {
-        let shell = app.shell();
-        let (_, shell_child) = shell
-            .sidecar(SIDECAR_NAME)?
+        let sidecar = release_sidecar_path()?;
+        let sidecar_dir = sidecar
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| PathBuf::from("."));
+
+        let mut command = Command::new(&sidecar);
+        command
+            .current_dir(sidecar_dir)
             .env("JOB_TRACKER_DATA_DIR", &data_dir_str)
             .env("PORT", API_PORT)
-            .env("HOST", "127.0.0.1")
-            .spawn()?;
-
-        BackendChild::Shell(shell_child)
+            .env("HOST", "127.0.0.1");
+        configure_hidden_command(&mut command);
+        command.spawn()?
     };
 
-    wait_for_backend(API_PORT);
     Ok(child)
+}
+
+fn backend_is_listening(port: &str) -> bool {
+    let address = format!("127.0.0.1:{port}");
+    match address.parse() {
+        Ok(addr) => {
+            std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(300)).is_ok()
+        }
+        Err(_) => false,
+    }
+}
+
+/// Kill the backend and everything it spawned. The caxa launcher starts a
+/// child `node.exe`, so killing only the launcher would leave an orphan
+/// holding the port.
+fn kill_backend(child: &mut Child) {
+    #[cfg(windows)]
+    {
+        let mut command = Command::new("taskkill");
+        command.args(["/PID", &child.id().to_string(), "/T", "/F"]);
+        configure_hidden_command(&mut command);
+        let _ = command.status();
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
+/// Starts the backend (unless something already serves the port) and keeps
+/// it alive: if the process exits, it is started again.
+fn supervise_backend(handle: tauri::AppHandle, data_dir: PathBuf) {
+    const MAX_RESTARTS: u32 = 5;
+    let mut restarts = 0;
+
+    loop {
+        let Some(state) = handle.try_state::<BackendProcess>() else {
+            return;
+        };
+
+        if state.shutting_down.load(Ordering::SeqCst) {
+            return;
+        }
+
+        let running = {
+            let mut guard = match state.child.lock() {
+                Ok(guard) => guard,
+                Err(_) => return,
+            };
+            match guard.as_mut() {
+                Some(child) => match child.try_wait() {
+                    Ok(None) => true,
+                    _ => {
+                        log::warn!("Backend process exited");
+                        *guard = None;
+                        false
+                    }
+                },
+                None => false,
+            }
+        };
+
+        // Nothing to do if our process is alive, or another backend (e.g. a
+        // dev server or a previous instance) already answers on the port.
+        if !running && !backend_is_listening(API_PORT) {
+            if restarts > MAX_RESTARTS {
+                log::error!("Backend failed to start {MAX_RESTARTS} times, giving up");
+                return;
+            }
+            restarts += 1;
+
+            match spawn_backend_process(&data_dir) {
+                Ok(child) => {
+                    if let Ok(mut guard) = state.child.lock() {
+                        *guard = Some(child);
+                    }
+                    // Give it time to come up (first launch unpacks the sidecar,
+                    // which can be slow). The process is never killed for being slow.
+                    if wait_for_backend(API_PORT, 600) {
+                        restarts = 0;
+                    } else {
+                        log::warn!("Backend is still not listening on 127.0.0.1:{API_PORT}");
+                    }
+                }
+                Err(error) => {
+                    log::error!("Failed to start backend: {error}");
+                }
+            }
+        }
+
+        thread::sleep(std::time::Duration::from_secs(2));
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -130,12 +264,20 @@ pub fn run() {
                 )?;
             }
 
-            let child = spawn_backend(app).map_err(|error| {
-                eprintln!("Failed to start backend: {error}");
-                std::io::Error::other(error.to_string())
-            })?;
+            let data_dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&data_dir)?;
+            let _ = migrate_legacy_data(&data_dir);
 
-            app.manage(BackendProcess(Mutex::new(Some(child))));
+            app.manage(BackendProcess {
+                child: Mutex::new(None),
+                shutting_down: AtomicBool::new(false),
+            });
+
+            // Start backend in the background so the UI window opens immediately.
+            // The frontend waits for /api/health before making requests.
+            let handle = app.handle().clone();
+            thread::spawn(move || supervise_backend(handle, data_dir));
+
             Ok(())
         })
         .build(tauri::generate_context!())
@@ -144,9 +286,10 @@ pub fn run() {
     app.run(|app_handle, event| {
         if let tauri::RunEvent::Exit = event {
             if let Some(state) = app_handle.try_state::<BackendProcess>() {
-                if let Ok(mut guard) = state.0.lock() {
-                    if let Some(child) = guard.take() {
-                        child.kill();
+                state.shutting_down.store(true, Ordering::SeqCst);
+                if let Ok(mut guard) = state.child.lock() {
+                    if let Some(mut child) = guard.take() {
+                        kill_backend(&mut child);
                     }
                 }
             }
