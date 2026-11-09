@@ -30,6 +30,21 @@
   --resume-bg: #f8f9fb;
   --toggle-track: rgba(255, 255, 255, 0.2);
   --toggle-thumb: #ffffff;
+
+  /* Skill gap categories. Slot order matches SKILL_CATEGORIES in
+     utils/skillCategories.js; validated for colour-blind separation in this order. */
+  --skill-cat-1: #2a78d6;
+  --skill-cat-2: #eb6834;
+  --skill-cat-3: #1baf7a;
+  --skill-cat-4: #eda100;
+  --skill-cat-5: #e87ba4;
+  --skill-cat-6: #008300;
+  --skill-cat-7: #6250d6;
+  --skill-cat-8: #e34948;
+  --skill-cat-9: #0e93b5;
+  --skill-cat-10: #a8862a;
+  --skill-cat-11: #b4459b;
+  --skill-cat-other: #9aa0ab;
 }
 
 [data-theme='dark'] {
@@ -62,4 +77,17 @@
   --resume-bg: #252a3a;
   --toggle-track: rgba(255, 255, 255, 0.15);
   --toggle-thumb: #6a9fd4;
+
+  --skill-cat-1: #3987e5;
+  --skill-cat-2: #d95926;
+  --skill-cat-3: #199e70;
+  --skill-cat-4: #c98500;
+  --skill-cat-5: #d55181;
+  --skill-cat-6: #008300;
+  --skill-cat-7: #9085e9;
+  --skill-cat-8: #e66767;
+  --skill-cat-9: #2ba3cc;
+  --skill-cat-10: #a68a2c;
+  --skill-cat-11: #c35fae;
+  --skill-cat-other: #6b7387;
 }
