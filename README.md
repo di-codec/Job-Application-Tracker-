@@ -366,8 +366,26 @@ are missing most often across all applications.
 - Skills that are no longer linked to any application are deleted automatically, so the
   autocomplete list stays clean.
 
-**Skill Gap page** (`/skill-gap`) - ranked table: #, skill, "N of M" applications, share bar
-and percentage.
+**Skill Gap page** (`/skill-gap`) - skills are grouped into categories:
+
+- a donut shows each category's share of all skill-gap mentions (one mention = one skill
+  missing in one application; the total is in the centre), with a legend;
+- one card per category, sorted by share, "Other" last; a card expands to list its skills
+  with their own numbers: "N of M apps" and the share of analysed applications.
+
+Two different denominators are used on purpose: category % = share of all mentions,
+skill % inside a card = share of applications. Skill percentages are never summed.
+
+The grouping lives in the frontend:
+
+- `frontend/src/utils/skillCategories.js` - **edit this file to regroup skills**: the
+  category list (label, icon, colour slot) and the skill name -> category map. Unmapped
+  skills go to "Other"; names starting with "AWS ", "Azure ", "Google Cloud" or "GCP " fall
+  back to their cloud. Rule: a cloud provider's service goes to that provider (GKE -> GCP),
+  except Azure DevOps -> CI/CD.
+- `frontend/src/utils/groupSkillGaps.js` - turns `/api/skills/gap-stats` into groups.
+- Category colours are `--skill-cat-1` ... `--skill-cat-11` and `--skill-cat-other` in
+  `theme.css` (light and dark values).
 
 ## Desktop shell (Tauri)
 
