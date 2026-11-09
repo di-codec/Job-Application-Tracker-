@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getGapStats } from '../api/skills.js';
+import SkillGapDonut from '../components/skillGap/SkillGapDonut.jsx';
+import SkillCategoryCard from '../components/skillGap/SkillCategoryCard.jsx';
+import { groupSkillGaps } from '../utils/groupSkillGaps.js';
 
 function pluralize(count, word) {
   return `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -10,6 +13,9 @@ export default function SkillGap() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
+  const [hoveredId, setHoveredId] = useState(null);
+  const cardRefs = useRef({});
 
   useEffect(() => {
     let cancelled = false;
@@ -33,14 +39,26 @@ export default function SkillGap() {
     };
   }, []);
 
-  const hasData = stats && stats.skills.length > 0;
+  const grouped = useMemo(() => (stats ? groupSkillGaps(stats) : null), [stats]);
+  const hasData = grouped && grouped.groups.length > 0;
+
+  function toggleCard(id) {
+    setExpandedId((current) => (current === id ? null : id));
+  }
+
+  // Clicking a donut sector or legend row opens that card and brings it into view.
+  function selectFromChart(id) {
+    setExpandedId(id);
+    requestAnimationFrame(() => {
+      cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
 
   return (
     <section className="page page--wide">
       <h2 className="page__title">Skill Gap</h2>
       <p className="page__text page__text--muted">
-        Skills you were missing, ranked by how many applications asked for them. Each skill
-        counts once per application.
+        Skills you were missing, grouped by area. Each skill counts once per application.
       </p>
 
       {loading && <p className="page__text page__text--muted">Loading…</p>}
@@ -59,46 +77,45 @@ export default function SkillGap() {
       {!loading && !error && hasData && (
         <>
           <p className="page__text skill-gap__summary">
-            Based on {pluralize(stats.total_applications, 'application')} where you marked
+            Based on {pluralize(grouped.totalApplications, 'application')} where you marked
             missing skills
-            {stats.excluded_applications > 0 &&
-              ` (${pluralize(stats.excluded_applications, 'application')} excluded from stats)`}
+            {grouped.excludedApplications > 0 &&
+              ` (${pluralize(grouped.excludedApplications, 'application')} excluded from stats)`}
             .
           </p>
 
-          <div className="table-wrap">
-            <table className="table skill-gap__table">
-              <thead>
-                <tr>
-                  <th className="skill-gap__rank">#</th>
-                  <th>Skill</th>
-                  <th>Applications</th>
-                  <th>Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.skills.map((skill) => (
-                  <tr key={skill.id}>
-                    <td className="skill-gap__rank">{skill.rank}</td>
-                    <td>{skill.name}</td>
-                    <td>
-                      {skill.count} of {stats.total_applications}
-                    </td>
-                    <td>
-                      <div className="skill-gap__share">
-                        <div className="skill-gap__bar" aria-hidden="true">
-                          <div
-                            className="skill-gap__bar-fill"
-                            style={{ width: `${skill.percentage}%` }}
-                          />
-                        </div>
-                        <span className="skill-gap__percent">{skill.percentage}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="gap-panel">
+            <SkillGapDonut
+              grouped={grouped}
+              hoveredId={hoveredId}
+              selectedId={expandedId}
+              onHover={setHoveredId}
+              onSelect={selectFromChart}
+            />
+            <p className="gap-panel__note">
+              Category percentages are shares of all {grouped.totalMentions} skill-gap
+              mentions (one mention = one skill missing in one application). Inside a card,
+              each skill shows in how many of the {grouped.totalApplications} applications it
+              was missing.
+            </p>
+          </div>
+
+          <div className="gap-cards">
+            {grouped.groups.map((group) => (
+              <SkillCategoryCard
+                key={group.id}
+                ref={(node) => {
+                  cardRefs.current[group.id] = node;
+                }}
+                group={group}
+                totalMentions={grouped.totalMentions}
+                totalApplications={grouped.totalApplications}
+                expanded={expandedId === group.id}
+                highlighted={hoveredId === group.id}
+                onToggle={() => toggleCard(group.id)}
+                onHover={setHoveredId}
+              />
+            ))}
           </div>
         </>
       )}
